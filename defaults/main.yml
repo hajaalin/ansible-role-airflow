@@ -39,7 +39,7 @@ airflow_virtualenv_mode: "0755"
 airflow_python_version: "{{ _airflow_python_version }}"
 python_version: "3.9.10"
 # Update if python version or apache airflow version changes.
-airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2-3/constraints-3.9.txt"
+airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2.3.4/constraints-3.9.txt"
 
 airflow_packages:
   - name: 'GitPython'
@@ -47,6 +47,7 @@ airflow_packages:
   - name: 'apache-airflow'
     version: '2.3.0'
   - name: 'pipenv'
+  - name: 'psycopg2-binary'
   - name: 'numpy'
 airflow_extra_packages:
   - name: 'apache-airflow[crypto]'
@@ -117,12 +118,17 @@ airflow_service_envfile_path: '/etc/default/airflow'
 
 # Databases variables
 airflow_manage_database: true
-airflow_database_engine: 'mysql'
+airflow_database_engine: 'postgresql'
 airflow_database_sqlite_file_path: "{{ airflow_user_home_path ~ '/airflow/airflow.db' }}"
 
 # Set do_init to false if database already initialized
 airflow_do_init_db: true
 airflow_do_upgrade_db: true
+
+# Postgres
+postgres_airflow_user: "airflow"
+postgres_airflow_password: "testonly"
+
 
 airflow_webserver_authenticate: false
 
@@ -153,7 +159,7 @@ airflow_defaults_config:
     remote_log_conn_id: ''
 
   database:
-    sql_alchemy_conn: "sqlite:///{{ airflow_database_sqlite_file_path }}"
+    sql_alchemy_conn: "postgresql+psycopg2://{{ postgres_airflow_user }}:{{ postgres_airflow_password }}@{{ postgres_hostname | default('localhost') }}/airflow"
     sql_alchemy_pool_size: 5
     sql_alchemy_pool_recycle: 3600
 
@@ -244,12 +250,12 @@ airflow_user_config: {}
 airflow_config: "{{ airflow_defaults_config | combine(airflow_user_config, recursive=true) }}"
 
 # Airflow Webserver Users management
-airflow_webserver_admins:
-  - google_username: "google_113716629440137414774"
-    email: "tuj27080@temple.edu"
-    firstname: "David"
-    lastname: "Kinzer"
-    airflow_dummy_password: "dummy-password"
+#airflow_webserver_admins:
+#  - google_username: "google_113716629440137414774"
+#    email: "tuj27080@temple.edu"
+#    firstname: "David"
+#    lastname: "Kinzer"
+#    airflow_dummy_password: "dummy-password"
 
 # Connections management
 airflow_connections:
