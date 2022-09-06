@@ -16,9 +16,11 @@
     executable: /bin/bash
   tags:
     - connections
-
+    
 # Only add and delete actions are managed, not update
 - name: 'CONFIG | CONNECTIONS | Remove listed connections'
+  become_user: "{{ airflow_user_name }}"
+  become: true
   command: >
     {{ airflow_virtualenv }}/bin/airflow connections delete {{ item.conn_id }}
   changed_when: false
@@ -30,6 +32,8 @@
     - connections
 
 - name: 'CONFIG | CONNECTIONS | Add connections using conn_uri'
+  become_user: "{{ airflow_user_name }}"
+  become: true
   command: >
     {{ airflow_virtualenv }}/bin/airflow connections add \
     {{ item.conn_id }} \
@@ -43,6 +47,8 @@
     - connections
 
 - name: 'CONFIG | CONNECTIONS | Add connections not using conn_uri without port'
+  become_user: "{{ airflow_user_name }}"
+  become: true
   command: >
     {{ airflow_virtualenv }}/bin/airflow connections add \
     {{ item.conn_id }} \
@@ -63,6 +69,8 @@
     - connections
 
 - name: 'CONFIG | CONNECTIONS | Add connections not using conn_uri with port'
+  become_user: "{{ airflow_user_name }}"
+  become: true
   command: >
     {{ airflow_virtualenv }}/bin/airflow connections add \
     {{ item.conn_id }} \
