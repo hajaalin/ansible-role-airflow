@@ -8,6 +8,6 @@
   name: tulibraries.server-bootstrap
   version: main
 
-- src: diodonfrost.python
-  name: diodonfrost.python
-  version: 1.0.0
+#- src: diodonfrost.python
+#  name: diodonfrost.python
+#  version: 1.0.0
