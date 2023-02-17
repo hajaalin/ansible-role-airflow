@@ -59,6 +59,9 @@
   when:
     - "airflow_webserver_authenticate | bool"
 
+- name: debug sqlalchemy
+  debug:
+    var: sql_alchemy_conn
 
 # Manage database initialize if first deployment
 - name: 'CONFIG | Manage database initialize'
