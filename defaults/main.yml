@@ -39,13 +39,13 @@ airflow_virtualenv_mode: "0755"
 airflow_python_version: "{{ _airflow_python_version }}"
 python_version: "3.9.10"
 # Update if python version or apache airflow version changes.
-airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2.5.1/constraints-3.9.txt"
+airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2.5.2/constraints-3.9.txt"
 
 airflow_packages:
   - name: 'GitPython'
   - name: 'Cython'
   - name: 'apache-airflow'
-    version: '2.5.1'
+    version: '2.5.2'
   - name: 'pipenv'
   - name: 'psycopg2-binary'
   - name: 'numpy'
@@ -134,6 +134,9 @@ airflow_sqlalchemy_conn: "postgresql+psycopg2://{{ postgresql_airflow_user }}:{{
 
 airflow_webserver_authenticate: false
 
+airflow_executor: 'SequentialExecutor'
+airflow_fernet_key: 'cryptography_not_found_storing_passwords_in_plain_text'
+
 # Default configuration
 airflow_config_template: "templates/airflow.cfg.j2"
 airflow_defaults_config:
@@ -143,7 +146,7 @@ airflow_defaults_config:
     dags_folder: "{{ airflow_user_home_path ~ '/airflow/dags' }}"
     dags_folder_mode: "0755"
     encrypt_s3_logs: false
-    executor: 'SequentialExecutor'
+    executor: "{{ airflow_executor }}"
     parallelism: 32
     max_active_tasks_per_dag: 16
     dags_are_paused_at_creation: true
@@ -151,7 +154,7 @@ airflow_defaults_config:
     max_active_runs_per_dag: 16
     load_examples: false
     plugins_folder: "{{ airflow_user_home_path ~ '/airflow/plugins' }}"
-    airflow_fernet_key: 'cryptography_not_found_storing_passwords_in_plain_text'
+    airflow_fernet_key: "{{ airflow_fernet_key }}"
     donot_pickle: false
     dagbag_import_timeout: 30
 
