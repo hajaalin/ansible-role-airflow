@@ -157,7 +157,8 @@ airflow_defaults_config:
     airflow_fernet_key: "{{ airflow_fernet_key }}"
     donot_pickle: false
     dagbag_import_timeout: 30
-
+    timezone: "{{ airflow_timezone }}"
+    
   logging:
     base_log_folder: "{{ airflow_log_path }}"
     remote_base_log_folder: ''
