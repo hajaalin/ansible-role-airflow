@@ -175,7 +175,8 @@ airflow_defaults_config:
   webserver:
     auth_backends: ''
     authenticate: false
-    base_url: 'http://localhost:8080'
+    base_url: "{{ airflow_webserver_base_url | default('http://localhost:8080') }}"
+    enable_proxy_fix: "{{ airflow_webserver_enable_proxy_fix | default(false) }}"
     debug: false
     expose_config: true
     filter_by_owner: false
