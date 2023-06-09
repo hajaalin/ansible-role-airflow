@@ -11,4 +11,4 @@ _airflow_system_dependencies:
  - name: 'libxslt-devel'
  - name: 'gcc'
  # These are both necessary for the python venv setup
- - name: 'python39-setuptools.noarch'
+ #- name: 'python-setuptools'
