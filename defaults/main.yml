@@ -39,19 +39,25 @@ airflow_virtualenv_mode: "0755"
 airflow_python_version: "{{ _airflow_python_version }}"
 python_version: "3.9.10"
 # Update if python version or apache airflow version changes.
-airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2.5.2/constraints-3.9.txt"
+airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-2.6.2/constraints-3.9.txt"
 
 airflow_packages:
   - name: 'GitPython'
   - name: 'Cython'
-  - name: 'apache-airflow'
-    version: '2.5.2'
+  - name: 'apache-airflow[oidc]'
+    version: '2.6.2'
   - name: 'pipenv'
   - name: 'psycopg2-binary'
   - name: 'numpy'
 airflow_extra_packages:
   - name: 'apache-airflow[crypto]'
-
+  - name: 'requests'
+  - name: 'flask-oidc'
+  - name: 'aiohttp'
+  - name: 'selenium'
+  - name: 'selenium-screenshot'
+  - name: 'openpyxl'
+    
 dag_packages: []
 
 # option to set environment for all users,
@@ -174,7 +180,6 @@ airflow_defaults_config:
     default_queue: 'default'
 
   webserver:
-    auth_backends: ''
     authenticate: false
     base_url: "{{ airflow_webserver_base_url | default('http://localhost:8080') }}"
     enable_proxy_fix: "{{ airflow_webserver_enable_proxy_fix | default(false) }}"
@@ -192,6 +197,14 @@ airflow_defaults_config:
     workers: 1
     worker_class: 'sync'
     worker_timeout: 30
+
+  api:
+    auth_backends: '{{ airflow_api_auth_backends }}'
+
+  oidc:
+    oidc_client_id: "{{ airflow_oidc_client_id }}"
+    oidc_client_secret: "{{ airflow_oidc_client_secret }}"
+    oidc_discovery_url: "{{ airflow_oidc_discovery_url }}"
 
   email:
     email_backend: 'airflow.utils.email.send_email_smtp'
