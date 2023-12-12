@@ -47,6 +47,7 @@ airflow_packages:
   - name: 'apache-airflow[oidc]'
     version: '2.6.2'
   - name: 'apache-airflow-providers-sendgrid'
+  - name: 'apache-airflow-providers-sftp'
   - name: 'pipenv'
   - name: 'psycopg2-binary'
   - name: 'numpy'
