@@ -46,6 +46,7 @@ airflow_packages:
   - name: 'Cython'
   - name: 'apache-airflow[oidc]'
     version: '2.6.2'
+  - name: 'apache-airflow-providers-sendgrid'
   - name: 'pipenv'
   - name: 'psycopg2-binary'
   - name: 'numpy'
@@ -207,16 +208,18 @@ airflow_defaults_config:
     oidc_discovery_url: "{{ airflow_oidc_discovery_url }}"
 
   email:
-    email_backend: 'airflow.utils.email.send_email_smtp'
+    email_backend: 'airflow.providers.sendgrid.utils.emailer.send_email'
+    email_conn_id: 'sendgrid_default'
+    from_email: '{{ airflow_smtp_mail_from }}'
 
   smtp:
-    smtp_host: 'localhost'
-    smtp_starttls: true
-    smtp_ssl: false
-    smtp_user: 'airflow'
-    smtp_port: 25
-    smtp_password: 'airflow'
-    smtp_mail_from: 'airflow@airflow.com'
+    smtp_host: '{{ airflow_smtp_host }}'
+    smtp_starttls: '{{ airflow_smtp_starttls }}'
+    smtp_ssl: '{{ airflow_smtp_ssl }}'
+    smtp_user: '{{ airflow_smtp_user }}'
+    smtp_port: '{{ airflow_smtp_port }}'
+    smtp_password: '{{ airflow_smtp_password }}'
+    smtp_mail_from: '{{ airflow_smtp_mail_from }}'
 
   celery:
     celery_app_name: 'airflow.executors.celery_executor'
