@@ -114,12 +114,34 @@ airflow_services_systemd:
         After: 'network.target {{ airflow_systemd_wants }}'
         Description: 'Airflow scheduler daemon'
         Wants: '{{ airflow_systemd_wants }}'
+  - dest: '/etc/systemd/system/airflow-triggerer.service'
+    handler: 'Restart airflow-triggerer'
+    options:
+      Install:
+        WantedBy: 'multi-user.target'
+      Service:
+        Environment: "PATH={{ airflow_virtualenv ~ '/bin' }}"
+        EnvironmentFile: "{{ airflow_service_envfile_path }}"
+        ExecStart: "{{ airflow_virtualenv ~ '/bin' }}/airflow triggerer"
+        Group: "{{ airflow_user_group }}"
+        PrivateTmp: 'true'
+        Restart: 'always'
+        RestartSec: '5s'
+        Type: 'simple'
+        User: "{{ airflow_user_name }}"
+      Unit:
+        After: 'network.target {{ airflow_systemd_wants }}'
+        Description: 'Airflow scheduler daemon'
+        Wants: '{{ airflow_systemd_wants }}'
 
 airflow_services_states:
   - name: 'airflow-webserver'
     enabled: true
     state: 'started'
   - name: 'airflow-scheduler'
+    enabled: true
+    state: 'started'
+  - name: 'airflow-triggerer'
     enabled: true
     state: 'started'
 

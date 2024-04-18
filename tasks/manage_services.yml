@@ -12,6 +12,7 @@
   notify:
     - 'Restart airflow-webserver'
     - 'Restart airflow-scheduler'
+    - 'Restart airflow-triggerer'
     - 'Restart airflow-worker'
 
 

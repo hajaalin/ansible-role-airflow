@@ -44,6 +44,20 @@
     - 'role::airflow::config'
     - 'role::airflow::install'
 
+- name: 'Restart airflow-triggerer'
+  become: true
+  service:
+    name: "{{ item.name }}"
+    state: 'restarted'
+  with_items: "{{ airflow_services_states }}"
+  when:
+    - "item.name == 'airflow-triggerer'"
+    - "item.state == 'started'"
+  tags:
+    - 'role::airflow'
+    - 'role::airflow::config'
+    - 'role::airflow::install'
+
 
 - name: 'Restart airflow-kerberos'
   become: true
