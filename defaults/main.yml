@@ -40,6 +40,9 @@ airflow_virtualenv_mode: "0755"
 
 airflow_google_client_id: ""
 airflow_google_client_secret: ""
+# Empty = no restriction. Non-empty restricts Google OAuth login/self-
+# registration to these email domains (webserver_config.py's auth_user_oauth).
+airflow_google_allowed_domains: []
 
 airflow_celery:
   broker_url: >-

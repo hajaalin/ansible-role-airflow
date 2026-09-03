@@ -1,6 +1,9 @@
+import logging
 import os
 from flask_appbuilder.security.manager import AUTH_DB, AUTH_OAUTH
 from airflow.providers.fab.auth_manager.security_manager.override import FabAirflowSecurityManagerOverride
+
+log = logging.getLogger(__name__)
 
 # ----------------------------------------------------
 # Basic Security
@@ -15,6 +18,15 @@ CSRF_ENABLED = True
 # auth (e.g. `airflow users create`) instead of hard-failing at import time.
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+# Comma-separated list, e.g. "helsinki.fi". Empty means no restriction -
+# any Google account can log in and self-register, which you almost
+# certainly don't want on anything reachable outside your own network.
+GOOGLE_ALLOWED_DOMAINS = [
+    d.strip().lower()
+    for d in os.environ.get("GOOGLE_ALLOWED_DOMAINS", "").split(",")
+    if d.strip()
+]
 
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     AUTH_TYPE = AUTH_OAUTH
@@ -39,13 +51,19 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
         }
     ]
 
-    # ----------------------------------------------------
-    # Optional: restrict allowed domains
-    # ----------------------------------------------------
     class CustomSecurityManager(FabAirflowSecurityManagerOverride):
 
         def auth_user_oauth(self, userinfo):
             email = userinfo.get("email")
+
+            if GOOGLE_ALLOWED_DOMAINS and email:
+                domain = email.rsplit("@", 1)[-1].lower()
+                if domain not in GOOGLE_ALLOWED_DOMAINS:
+                    log.warning(
+                        "Rejecting OAuth login for %s: domain %s not in %s",
+                        email, domain, GOOGLE_ALLOWED_DOMAINS,
+                    )
+                    return None
 
             if email:
                 user = self.find_user(email=email)
