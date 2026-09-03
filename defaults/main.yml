@@ -38,8 +38,8 @@ airflow_pid_mode: '0700'
 airflow_virtualenv: "{{ airflow_user_home_path }}/venv3.12"
 airflow_virtualenv_mode: "0755"
 
-airflow_google_client_id: "your-client-id"
-airflow_google_client_secret: "your-client-secret"
+airflow_google_client_id: ""
+airflow_google_client_secret: ""
 
 airflow_celery:
   broker_url: >-
