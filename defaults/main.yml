@@ -15,6 +15,8 @@ airflow_pip_changed_when: false
 # https://stackoverflow.com/a/48075827
 airflow_pip_custom_version_install: false
 
+airflow_version: '3.3.0'
+
 # Installation vars
 airflow_user_name: 'airflow'
 airflow_user_group: "{{ airflow_user_name }}"
@@ -71,7 +73,7 @@ redis_port: 6379
 airflow_python_version: "{{ _airflow_python_version }}"
 python_version: "3.12.13"
 # Update if python version or apache airflow version changes.
-airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-3.3.0/constraints-3.12.txt"
+airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-{{ airflow_version }}/constraints-3.12.txt"
 dags_repos_folder: "{{ airflow_user_home_path ~ '/airflow/dags_repos' }}"
 dags_folder: "{{ airflow_user_home_path ~ '/airflow/dags' }}"
 
@@ -79,12 +81,21 @@ airflow_packages:
   - name: 'GitPython'
   - name: 'Cython'
   - name: 'apache-airflow'
-    version: '3.3.0'
+    version: '{{ airflow_version }}'
   - name: 'pipenv'
   - name: 'numpy'
   - name: 'apache-airflow-providers-amazon'
   - name: 'apache-airflow-providers-fab'
   - name: 'authlib'
+  - name: 'apache-airflow-providers-sendgrid'
+  - name: 'apache-airflow-providers-sftp'
+  - name: 'psycopg2-binary'
+  - name: 'fabric'
+  - name: 'requests'
+  - name: 'aiohttp'
+  - name: 'selenium'
+  - name: 'selenium-screenshot'
+  - name: 'openpyxl'
 
 
 dag_packages: []
@@ -103,6 +114,7 @@ airflow_auth_enabled: true
 is_systemd_managed_system: "{{ _is_systemd_managed_system | default(false) }}"
 airflow_enable_dag_processor: true
 airflow_enable_triggerer: true
+airflow_systemd_wants: "postgresql.service mysql.service redis.service rabbitmq-server.service"
 airflow_services_systemd:
   - dest: '/etc/systemd/system/airflow-api-server.service'
     handler: 'Restart airflow-api-server' 
@@ -120,9 +132,9 @@ airflow_services_systemd:
         Type: 'simple'
         User: "{{ airflow_user_name }}"
       Unit:
-        After: 'network.target postgresql.service mysql.service redis.service rabbitmq-server.service'
+        After: 'network.target {{ airflow_systemd_wants }}'
         Description: 'Airflow API server daemon'
-        Wants: 'postgresql.service mysql.service redis.service rabbitmq-server.service'
+        Wants: '{{ airflow_systemd_wants }}'
   - dest: '/etc/systemd/system/airflow-scheduler.service'
     handler: 'Restart airflow-scheduler'
     options:
@@ -139,9 +151,9 @@ airflow_services_systemd:
         Type: 'simple'
         User: "{{ airflow_user_name }}"
       Unit:
-        After: 'network.target postgresql.service mysql.service redis.service rabbitmq-server.service'
+        After: 'network.target {{ airflow_systemd_wants }}'
         Description: 'Airflow scheduler daemon'
-        Wants: 'postgresql.service mysql.service redis.service rabbitmq-server.service'
+        Wants: '{{ airflow_systemd_wants }}'
   - dest: '/etc/systemd/system/airflow-dag-processor.service'
     handler: 'Restart airflow-dag-processor'
     managed: "{{ airflow_enable_dag_processor | bool }}"
@@ -159,9 +171,9 @@ airflow_services_systemd:
         Type: 'simple'
         User: "{{ airflow_user_name }}"
       Unit:
-        After: 'network.target postgresql.service mysql.service redis.service rabbitmq-server.service'
+        After: 'network.target {{ airflow_systemd_wants }}'
         Description: 'Airflow DAG processor daemon'
-        Wants: 'postgresql.service mysql.service redis.service rabbitmq-server.service'
+        Wants: '{{ airflow_systemd_wants }}'
   - dest: '/etc/systemd/system/airflow-triggerer.service'
     handler: 'Restart airflow-triggerer'
     managed: "{{ airflow_enable_triggerer | bool }}"
@@ -179,9 +191,9 @@ airflow_services_systemd:
         Type: 'simple'
         User: "{{ airflow_user_name }}"
       Unit:
-        After: 'network.target postgresql.service mysql.service redis.service rabbitmq-server.service'
+        After: 'network.target {{ airflow_systemd_wants }}'
         Description: 'Airflow triggerer daemon'
-        Wants: 'postgresql.service mysql.service redis.service rabbitmq-server.service'
+        Wants: '{{ airflow_systemd_wants }}'
 
 airflow_services_states:
   - name: 'airflow-api-server'
@@ -208,7 +220,23 @@ airflow_manage_database: true
 airflow_database_engine: 'mysql'
 airflow_database_sqlite_file_path: "{{ airflow_user_home_path ~ '/airflow/airflow.db' }}"
 
+airflow_sqlalchemy_conn: >-
+  {{
+    (
+      "postgresql+psycopg2://{}:{}@{}/airflow".format(
+        postgres_airflow_user,
+        postgres_airflow_password,
+        postgres_hostname | default('localhost')
+      )
+    )
+    if (postgres_airflow_user is defined and postgres_airflow_password is defined)
+    else
+    ("sqlite:///" ~ airflow_database_sqlite_file_path)
+  }}
+
 airflow_webserver_authenticate: false
+
+airflow_fernet_key: 'kV9w7m8Z0Z7l6dKX8f2Vg7sH3lQ0bW5cYyJt9eR2u1Q='
 
 # Default configuration
 airflow_config_template: "templates/airflow.cfg.j2"
@@ -216,19 +244,19 @@ airflow_defaults_config:
   core:
     auth_manager: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager 
     dags_folder: "{{ airflow_user_home_path ~ '/airflow/dags' }}"
-    executor: 'SequentialExecutor'
+    executor: "{{ airflow_executor }}"
     parallelism: 32
     dags_are_paused_at_creation: true
     default_pool_task_slot_count: 128
     max_active_runs_per_dag: 16
     load_examples: false
     plugins_folder: "{{ airflow_user_home_path ~ '/airflow/plugins' }}"
-    # This is not real, temporary secret for testing purposes
-    fernet_key: 'kV9w7m8Z0Z7l6dKX8f2Vg7sH3lQ0bW5cYyJt9eR2u1Q='
+    fernet_key: "{{ airflow_fernet_key }}"
     dagbag_import_timeout: 30
+    timezone: "{{ airflow_timezone }}"
   
   api:
-    base_url: 'http://localhost:8080'
+    base_url: "{{ airflow_webserver_base_url | default('http://localhost:8080') }}"
     expose_config: true
     host: '0.0.0.0'
     port: '8080'
@@ -241,14 +269,23 @@ airflow_defaults_config:
     parsing_processes: 2
 
   database:
-    sql_alchemy_conn: "sqlite:///{{ airflow_database_sqlite_file_path }}"
+    sql_alchemy_conn: "{{ airflow_sqlalchemy_conn }}"
     sql_alchemy_pool_size: 5
     sql_alchemy_pool_recycle: 3600
 
   email:
-    email_backend: 'airflow.utils.email.send_email_smtp'
+    email_backend: 'airflow.providers.sendgrid.utils.emailer.send_email'
+    email_conn_id: 'sendgrid_default'
+    from_email: '{{ airflow_smtp_mail_from }}'
 
-  smtp: {}
+  smtp:
+    smtp_host: '{{ airflow_smtp_host }}'
+    smtp_starttls: '{{ airflow_smtp_starttls }}'
+    smtp_ssl: '{{ airflow_smtp_ssl }}'
+    smtp_user: '{{ airflow_smtp_user }}'
+    smtp_port: '{{ airflow_smtp_port }}'
+    smtp_password: '{{ airflow_smtp_password }}'
+    smtp_mail_from: '{{ airflow_smtp_mail_from }}'
 
   ldap: {}
 
