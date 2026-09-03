@@ -2,6 +2,36 @@
 
 # Airflow installation tasks
 
+# Full system update up front, in the same transaction, to avoid a
+# partial-upgrade trap: installing specific packages below (openssl-devel,
+# gcc, python3.12-devel, etc.) can pull in a newer openssl-libs as a
+# dependency without openssh-server being part of that same transaction.
+# The already-running sshd then fails its OpenSSL ABI compatibility check
+# on next restart and crash-loops - a real risk of locking yourself out of
+# a live server, not just a local/test-box annoyance.
+- name: 'INSTALL | Full system update (keep openssl/sshd etc. consistent)'
+  ansible.builtin.dnf:
+    name: '*'
+    state: latest
+  register: airflow_full_system_update
+  when: ansible_os_family == 'RedHat'
+
+- name: 'INSTALL | Restart sshd and reconnect cleanly if the update touched it'
+  when:
+    - ansible_os_family == 'RedHat'
+    - airflow_full_system_update is changed
+  block:
+    - name: 'INSTALL | Restart sshd'
+      ansible.builtin.systemd:
+        name: sshd
+        state: restarted
+    - name: 'INSTALL | Reset the connection so Ansible reconnects fresh'
+      ansible.builtin.meta: reset_connection
+    - name: 'INSTALL | Wait for SSH to come back up'
+      ansible.builtin.wait_for_connection:
+        delay: 3
+        timeout: 90
+
 # Manage system dependencies
 - name: Refresh DNF metadata
   ansible.builtin.dnf:
