@@ -97,9 +97,14 @@ airflow_packages:
   - name: 'apache-airflow-providers-sendgrid'
   - name: 'apache-airflow-providers-sftp'
   - name: 'psycopg2-binary'
+  # pinned: unconstrained resolves against Airflow's already-installed modern
+  # paramiko/cryptography and backtracks all the way into fabric's abandoned
+  # pre-Python-3 releases (which don't even build) before giving up
   - name: 'fabric'
-  - name: 'requests'
-  - name: 'aiohttp'
+    version: '3.2.3'
+  # requests/aiohttp are already pinned by Airflow's own constraints file and
+  # pulled in transitively by apache-airflow itself - listing them again here
+  # only adds a redundant install step that can conflict with that pin
   - name: 'selenium'
   - name: 'selenium-screenshot'
   - name: 'openpyxl'
