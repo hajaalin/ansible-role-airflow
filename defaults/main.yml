@@ -96,7 +96,11 @@ airflow_packages:
   - name: 'authlib'
   - name: 'apache-airflow-providers-sendgrid'
   - name: 'apache-airflow-providers-sftp'
+  # Airflow 3 also opens an async SQLAlchemy session for the metadata DB
+  # (settings.py _configure_async_session); for postgres that needs asyncpg
+  # in addition to the sync psycopg2 driver.
   - name: 'psycopg2-binary'
+  - name: 'asyncpg'
   # pinned: unconstrained resolves against Airflow's already-installed modern
   # paramiko/cryptography and backtracks all the way into fabric's abandoned
   # pre-Python-3 releases (which don't even build) before giving up
