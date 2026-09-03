@@ -165,7 +165,7 @@
     version: "{{ item.version | default(omit) }}"
     state: "{{ item.state | default('present') }}"
     virtualenv: "{{ airflow_virtualenv }}"
-    virtualenv_command: "python3 -m venv"
+    virtualenv_command: "{{ airflow_venv_python }} -m venv"
     extra_args: "{{ airflow_python_constraint }}"
   changed_when: "airflow_pip_changed_when"
   with_items: "{{ airflow_packages }}"
@@ -218,7 +218,7 @@
     version: "{{ item.version | default(omit) }}"
     state: "{{ item.state | default('present') }}"
     virtualenv: "{{ airflow_virtualenv }}"
-    virtualenv_command: "/usr/bin/python3 -m venv"
+    virtualenv_command: "{{ airflow_venv_python }} -m venv"
   changed_when: "airflow_pip_changed_when"
   with_items: "{{ dag_packages }}"
   environment:

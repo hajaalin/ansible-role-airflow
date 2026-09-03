@@ -72,6 +72,13 @@ redis_port: 6379
 
 airflow_python_version: "{{ _airflow_python_version }}"
 python_version: "3.12.13"
+# On RHEL/Rocky, /usr/bin/python3 is an RPM-owned symlink to python3.9 that
+# 'CONFIG | Use Python 3.12 as default selection' (community.general.alternatives)
+# does not actually redirect - /etc/alternatives/python3 points at 3.12 but the
+# real /usr/bin/python3 file never gets repointed into it. Using the ambient
+# python3 to create the venv silently gets you a 3.9 venv named 'venv3.12'.
+# Be explicit instead.
+airflow_venv_python: "/usr/bin/python3.12"
 # Update if python version or apache airflow version changes.
 airflow_python_constraint: "--constraint=https://raw.githubusercontent.com/apache/airflow/constraints-{{ airflow_version }}/constraints-3.12.txt"
 dags_repos_folder: "{{ airflow_user_home_path ~ '/airflow/dags_repos' }}"
