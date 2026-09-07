@@ -187,7 +187,7 @@ airflow_defaults_config:
     max_active_runs_per_dag: 16
     load_examples: false
     plugins_folder: "{{ airflow_user_home_path ~ '/airflow/plugins' }}"
-    airflow_fernet_key: "{{ airflow_fernet_key }}"
+    fernet_key: "{{ airflow_fernet_key }}"
     donot_pickle: false
     dagbag_import_timeout: 30
     timezone: "{{ airflow_timezone }}"
