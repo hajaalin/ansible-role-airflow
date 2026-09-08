@@ -97,3 +97,20 @@
   with_items: "{{ airflow_webserver_admins }}"
   tags:
     - "add_users"
+
+# 'users create' above only creates a brand new user - it does nothing if
+# the username already exists (e.g. a user who self-registered via OAuth
+# before being added to airflow_webserver_admins, landing with the default
+# AUTH_USER_REGISTRATION_ROLE of Viewer). 'add-role' is idempotent and
+# promotes them regardless of whether they're new or already existed.
+- name: 'CONFIG | Promote Airflow Api server Admin Users (idempotent)'
+  become_user: "{{ airflow_user_name }}"
+  become: true
+  changed_when: false
+  failed_when: false
+  ansible.builtin.command: "{{ airflow_virtualenv }}/bin/airflow users add-role             --username {{ item.google_username }}             --role Admin"
+  when:
+    - "airflow_auth_enabled | bool"
+  with_items: "{{ airflow_webserver_admins }}"
+  tags:
+    - "add_users"
