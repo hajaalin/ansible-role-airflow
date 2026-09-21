@@ -306,8 +306,9 @@ airflow_defaults_config:
     sql_alchemy_pool_recycle: 3600
 
   email:
-    email_backend: 'airflow.providers.sendgrid.utils.emailer.send_email'
-    email_conn_id: 'sendgrid_default'
+    # Reads [smtp] below directly, no connection needed. To use SendGrid
+    # instead, override email_backend/email_conn_id via airflow_user_config.
+    email_backend: 'airflow.utils.email.send_email_smtp'
     from_email: '{{ airflow_smtp_mail_from }}'
 
   smtp:
