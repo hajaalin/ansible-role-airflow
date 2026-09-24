@@ -232,6 +232,9 @@
     state: "{{ item.state | default('present') }}"
     virtualenv: "{{ airflow_virtualenv }}"
     virtualenv_command: "{{ airflow_venv_python }} -m venv"
+    # Same venv as Airflow itself: hold everything to Airflow's constraints,
+    # or pip is free to move Airflow's own dependencies.
+    extra_args: "{{ airflow_python_constraint }}"
   changed_when: "airflow_pip_changed_when"
   with_items: "{{ dag_packages }}"
   environment:
