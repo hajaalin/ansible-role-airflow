@@ -53,11 +53,24 @@
     state: "{{ item.state | default('present') }}"
   with_items: "{{ airflow_system_dependencies }}"
 
-- name: 'CONFIG | Use Python 3.12 as default selection'
+# This role used to switch the system-wide python3 to 3.12 via alternatives.
+# That breaks OS tools that run under /usr/bin/python3 (firewall-cmd: "No
+# module named 'gi'"), and Ansible modules needing RPM-only bindings
+# (selinux, firewalld). The venv uses airflow_venv_python explicitly, so
+# nothing needs the switch. These two tasks undo it on boxes that already
+# got it; on a clean box they change nothing.
+- name: 'CONFIG | Remove old python3 -> 3.12 alternatives switch'
   community.general.alternatives:
     name: python3
     path: /usr/bin/python3.12
-    link: /usr/bin/python3
+    state: absent
+
+- name: 'CONFIG | Keep /usr/bin/python3 pointing at the system python'
+  ansible.builtin.file:
+    dest: /usr/bin/python3
+    src: python3.9
+    state: link
+    force: true
 
 - name: 'INSTALL | Add python symlink to python3'
   ansible.builtin.file:
