@@ -35,38 +35,45 @@
         })
       }}
   loop: "{{ airflow_connections }}"
+  no_log: true
   when: airflow_connections | default([]) | length > 0
   tags:
     - connections
 
 
-# Write JSON file used by airflow connections import
-- name: "CONFIG | CONNECTIONS | Write connections import file"
-  become_user: "{{ airflow_user_name }}"
-  become: true
-  ansible.builtin.copy:
-    dest: /tmp/airflow_connections.json
-    content: "{{ airflow_connections_import | to_nice_json }}"
-    mode: "0600"
+# Write the import file, import it, and always remove it again: it holds
+# every connection password in plaintext.
+- name: "CONFIG | CONNECTIONS | Import connections via temporary file"
   when: airflow_connections_import is defined
   tags:
     - connections
+  block:
+    - name: "CONFIG | CONNECTIONS | Write connections import file"
+      become_user: "{{ airflow_user_name }}"
+      become: true
+      ansible.builtin.copy:
+        dest: /tmp/airflow_connections.json
+        content: "{{ airflow_connections_import | to_nice_json }}"
+        mode: "0600"
+      diff: false
 
+    # Import connections (overwrite existing ones)
+    - name: "CONFIG | CONNECTIONS | Import connections"
+      become_user: "{{ airflow_user_name }}"
+      become: true
+      ansible.builtin.command:
+        argv:
+          - "{{ airflow_virtualenv }}/bin/airflow"
+          - connections
+          - import
+          - "--overwrite"
+          - /tmp/airflow_connections.json
+      changed_when: false
+      environment:
+        AIRFLOW__METRICS__STATSD_ON: "False"
 
-# Import connections (overwrite existing ones)
-- name: "CONFIG | CONNECTIONS | Import connections"
-  become_user: "{{ airflow_user_name }}"
-  become: true
-  ansible.builtin.command:
-    argv:
-      - "{{ airflow_virtualenv }}/bin/airflow"
-      - connections
-      - import
-      - "--overwrite"
-      - /tmp/airflow_connections.json
-  changed_when: false
-  environment:
-    AIRFLOW__METRICS__STATSD_ON: "False"
-  when: airflow_connections_import is defined
-  tags:
-    - connections
+  always:
+    - name: "CONFIG | CONNECTIONS | Remove connections import file"
+      ansible.builtin.file:
+        path: /tmp/airflow_connections.json
+        state: absent

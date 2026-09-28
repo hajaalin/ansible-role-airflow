@@ -359,14 +359,10 @@ airflow_webserver_admins:
     airflow_dummy_password: "dummy-password"
 
 # Connections management
-airflow_connections:
-  - conn_id: "ANSIBLE_TEST"
-    conn_uri: "http://localhost:9999"
+airflow_connections: []
 
 # Variables management
-airflow_variables:
-  - key: "ANSIBLE_TEST"
-    value: "test_value"
+airflow_variables: []
 
 # Logrotate configuration
 airflow_logrotate_template: "templates/logrotate.j2"

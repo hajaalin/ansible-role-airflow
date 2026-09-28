@@ -6,17 +6,26 @@
   ansible.builtin.debug:
     var: airflow_variables
 
-- name: 'CONFIG | VARIABLES | Save variables to file'
-  run_once: true
-  ansible.builtin.copy:
-    content: "{{ airflow_variables | items2dict | to_nice_json }}"
-    dest: /tmp/airflow_variables.json
-    mode: "0644"
+- name: 'CONFIG | VARIABLES | Import variables via temporary file'
+  when: airflow_variables | default([]) | length > 0
+  block:
+    - name: 'CONFIG | VARIABLES | Save variables to file'
+      run_once: true
+      ansible.builtin.copy:
+        content: "{{ airflow_variables | items2dict | to_nice_json }}"
+        dest: /tmp/airflow_variables.json
+        mode: "0644"
 
+    - name: 'CONFIG | VARIABLES | Import variables from file'
+      become_user: "{{ airflow_user_name }}"
+      become: true
+      ansible.builtin.command:
+        cmd: "{{ airflow_virtualenv }}/bin/airflow variables import /tmp/airflow_variables.json"
+      run_once: true
 
-- name: 'CONFIG | VARIABLES | Import variables from file'
-  become_user: "{{ airflow_user_name }}"
-  become: true
-  ansible.builtin.command:
-    cmd: "{{ airflow_virtualenv }}/bin/airflow variables import /tmp/airflow_variables.json"
-  run_once: true
+  always:
+    - name: 'CONFIG | VARIABLES | Remove variables import file'
+      run_once: true
+      ansible.builtin.file:
+        path: /tmp/airflow_variables.json
+        state: absent
