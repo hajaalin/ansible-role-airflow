@@ -131,6 +131,13 @@ if OAUTH_PROVIDERS:
         def auth_user_oauth(self, userinfo):
             email = userinfo.get("email")
 
+            # Without an email neither allowlist below can be checked, so
+            # such a login must not fall through to self-registration (an
+            # IdP may not release the email claim for every account).
+            if (GOOGLE_ALLOWED_DOMAINS or GOOGLE_ALLOWED_EMAILS) and not email:
+                log.warning("Rejecting OAuth login without email: allowlist is set")
+                return None
+
             if GOOGLE_ALLOWED_DOMAINS and email:
                 domain = email.rsplit("@", 1)[-1].lower()
                 if domain not in GOOGLE_ALLOWED_DOMAINS:
