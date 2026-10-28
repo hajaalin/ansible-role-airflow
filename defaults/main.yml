@@ -48,6 +48,17 @@ airflow_google_allowed_domains: []
 # use this for a tight allowlist during rollout, before opening the whole
 # domain up.
 airflow_google_allowed_emails: []
+# (The two allowlists above apply to every OAuth provider, not just Google.)
+
+# Optional generic OIDC provider (e.g. a university IdP), shown next to
+# Google on the login page. Enabled when name, client id/secret and
+# discovery URL are all set. The redirect URI to register with the IdP is
+# https://<host>/auth/oauth-authorized/<airflow_oidc_provider_name>.
+airflow_oidc_provider_name: ""
+airflow_oidc_client_id: ""
+airflow_oidc_client_secret: ""
+airflow_oidc_discovery_url: ""
+airflow_oidc_scope: "openid profile email"
 
 airflow_celery:
   broker_url: >-

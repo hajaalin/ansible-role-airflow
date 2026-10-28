@@ -36,12 +36,19 @@ GOOGLE_ALLOWED_EMAILS = [
     if e.strip()
 ]
 
-if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
-    AUTH_TYPE = AUTH_OAUTH
-    AUTH_USER_REGISTRATION = True
-    AUTH_USER_REGISTRATION_ROLE = "Viewer"
+# Generic OIDC provider (e.g. the university IdP). The provider name is
+# part of the redirect URI registered with the IdP:
+# https://<host>/auth/oauth-authorized/<OIDC_PROVIDER_NAME>
+OIDC_PROVIDER_NAME = os.environ.get("OIDC_PROVIDER_NAME")
+OIDC_CLIENT_ID = os.environ.get("OIDC_CLIENT_ID")
+OIDC_CLIENT_SECRET = os.environ.get("OIDC_CLIENT_SECRET")
+OIDC_DISCOVERY_URL = os.environ.get("OIDC_DISCOVERY_URL")
+OIDC_SCOPE = os.environ.get("OIDC_SCOPE") or "openid profile email"
 
-    OAUTH_PROVIDERS = [
+OAUTH_PROVIDERS = []
+
+if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    OAUTH_PROVIDERS.append(
         {
             "name": "google",
             "icon": "fa-google",
@@ -57,7 +64,29 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                 },
             },
         }
-    ]
+    )
+
+if OIDC_PROVIDER_NAME and OIDC_CLIENT_ID and OIDC_CLIENT_SECRET and OIDC_DISCOVERY_URL:
+    OAUTH_PROVIDERS.append(
+        {
+            "name": OIDC_PROVIDER_NAME,
+            "icon": "fa-university",
+            "token_key": "access_token",
+            "remote_app": {
+                "client_id": OIDC_CLIENT_ID,
+                "client_secret": OIDC_CLIENT_SECRET,
+                "server_metadata_url": OIDC_DISCOVERY_URL,
+                "client_kwargs": {
+                    "scope": OIDC_SCOPE
+                },
+            },
+        }
+    )
+
+if OAUTH_PROVIDERS:
+    AUTH_TYPE = AUTH_OAUTH
+    AUTH_USER_REGISTRATION = True
+    AUTH_USER_REGISTRATION_ROLE = "Viewer"
 
     class CustomSecurityManager(FabAirflowSecurityManagerOverride):
 
@@ -76,6 +105,23 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                 data = me.json()
                 return {
                     "username": "google_" + data.get("sub", ""),
+                    "first_name": data.get("given_name", ""),
+                    "last_name": data.get("family_name", ""),
+                    "email": data.get("email", ""),
+                }
+            if provider == OIDC_PROVIDER_NAME:
+                # FAB has no built-in mapping for a provider it doesn't know
+                # by name; read the standard OIDC claims from the IdP's
+                # userinfo endpoint (from the discovery document). Log only
+                # claim names - university IdPs release personal data.
+                data = self.appbuilder.sm.oauth_remotes[provider].userinfo()
+                log.info("OIDC %s userinfo claims: %s", provider, sorted(data.keys()))
+                if not data.get("sub"):
+                    # An empty suffix would put every user on one account.
+                    log.error("OIDC %s userinfo has no sub, rejecting login", provider)
+                    return {}
+                return {
+                    "username": provider + "_" + data["sub"],
                     "first_name": data.get("given_name", ""),
                     "last_name": data.get("family_name", ""),
                     "email": data.get("email", ""),
@@ -101,6 +147,9 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
                 )
                 return None
 
+            # A user who already exists (e.g. from a Google login) is matched
+            # by email, so the same person gets the same account and roles
+            # whichever provider they use.
             if email:
                 user = self.find_user(email=email)
                 if user:
