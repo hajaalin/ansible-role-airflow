@@ -38,6 +38,11 @@ airflow_pid_mode: '0700'
 airflow_virtualenv: "{{ airflow_user_home_path }}/venv3.12"
 airflow_virtualenv_mode: "0755"
 
+# Full dnf update at the start of the install tasks (see
+# tasks/manage_installation.yml for why). Set false to skip it on re-runs
+# against an already up-to-date box: -e airflow_system_update=false
+airflow_system_update: true
+
 airflow_google_client_id: ""
 airflow_google_client_secret: ""
 # Empty = no restriction. Non-empty restricts Google OAuth login/self-
