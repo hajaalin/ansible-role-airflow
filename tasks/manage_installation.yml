@@ -9,12 +9,18 @@
 # The already-running sshd then fails its OpenSSL ABI compatibility check
 # on next restart and crash-loops - a real risk of locking yourself out of
 # a live server, not just a local/test-box annoyance.
+#
+# airflow_system_update: false (e.g. -e airflow_system_update=false) skips
+# it, for re-runs against a box that's already updated and has everything
+# installed - only then is skipping safe.
 - name: 'INSTALL | Full system update (keep openssl/sshd etc. consistent)'
   ansible.builtin.dnf:
     name: '*'
     state: latest
   register: airflow_full_system_update
-  when: ansible_os_family == 'RedHat'
+  when:
+    - ansible_os_family == 'RedHat'
+    - airflow_system_update | bool
 
 - name: 'INSTALL | Restart sshd and reconnect cleanly if the update touched it'
   when:
